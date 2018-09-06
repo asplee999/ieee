@@ -1,0 +1,15 @@
+{
+  "name": "ieee",
+  "version": "0.0.1",
+  "description": "ieee sensor interface",
+  "repository": "https://github.com/asplee999/ieee.git",
+  "main": "index.js",
+  "scripts": {
+  },
+  "author": "Kino",
+  "engines": {
+    "node": "8.x"
+  },
+  "dependencies":{
+  }
+}
