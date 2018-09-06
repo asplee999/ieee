@@ -21,62 +21,62 @@ const remoteUrl = "http://210.61.40.166:8081/zigBeeDevice/deviceController/getfi
 
 const responseRe = new RegExp("null\\((.*)\\)");
 
-axios.get(remoteUrl + objectToParameters(requestParameters), {headers: {'Content-Type': 'application/json'} })
-	.then(function(result){
-		const matches = result.data.match(responseRe);
-		if (matches && matches.length) {
-			const response = JSON.parse(matches[1]);
-			const resList = response.response_params;
-			if (resList && resList.length){
-				resList.filter(function(item){
-					return ieeeList.indexOf(item.ieee) != -1;
-				})
-				.forEach(function(item){
-					let insertData = {
-						_last_time: item.lasttime,
-						_name: item.deviceName,
-						_houseieee: item.houseIeee,
-						_ieee: item.ieee
-					};
-					let ids = item.clusterIds.split(',');
-					let values = item.vals.split(',').map(function(val){return parseFloat(val).toFixed(2); });
-					let valueMap = {};
-					
-					ids.forEach(function(id, idx){
-            					valueMap[id] = values[idx];
-            				});
-
-					var sortedKeys = Object.keys(valueMap);
-
-					sortedKeys.sort();
-
-					sortedKeys.forEach(function(key, idx){
-						insertData[ dataKeys[idx] ] = valueMap[key];
-					});
-
-					console.log(insertData);
-				});
-			}
-		}
-	})
-	.catch(function(err){
-		console.error(err);
-	});
-
-/*
 MongoClient.connect(url, function(err, client) {
 	if(err) throw err;
-	//Write databse Insert/Update/Query code here..
-	console.log('mongodb is running!');
+	
+	const dbName = "sensor";
+	const collectionName = "rawdata";
 
-	var db = client.db("TestDB");
+	const db = client.db(dbName);
 
-	db.collection('TestPersons',function(err,collection){
-		collection.insertOne({ id:1, firstName:'Steve', lastName:'Jobs' });
-		collection.insertOne({ id:2, firstName:'Bill', lastName:'Gates' });
-		collection.insertOne({ id:3, firstName:'James', lastName:'Bond' });
-	});
+ 	axios.get(remoteUrl + objectToParameters(requestParameters))
+		.then(function(result){
+			const matches = result.data.match(responseRe);
+			if (matches && matches.length) {
+				const response = JSON.parse(matches[1]);
+				const resList = response.response_params;
+				if (resList && resList.length){
+					let dataSet = resList.filter(function(item){
+						return ieeeList.indexOf(item.ieee) != -1;
+					})
+					.map(function(item){
+						let insertData = {
+							_last_time: item.lasttime,
+							_name: item.deviceName,
+							_houseieee: item.houseIeee,
+							_ieee: item.ieee
+						};
+						let ids = item.clusterIds.split(',');
+						let values = item.vals.split(',').map(function(val){return parseFloat(val).toFixed(2); });
+						let valueMap = {};
+						
+						ids.forEach(function(id, idx){
+							valueMap[id] = values[idx];
+						});
 
-  	client.close(); //關閉連線
+						var sortedKeys = Object.keys(valueMap);
+
+						sortedKeys.sort();
+
+						sortedKeys.forEach(function(key, idx){
+							insertData[ dataKeys[idx] ] = valueMap[key];
+						});
+
+						return insertData;
+					});
+
+					dataSet.forEach(function(data){
+						db.collection(collectionName,function(err,collection){
+							collection.insertOne(data);
+						});
+						console.log("Inserted: " + JSON.stringify(data) );
+					})
+				}
+			}
+			client.close();
+		})
+		.catch(function(err){
+			console.error(err);
+			client.close();
+		});
 });
-*/
