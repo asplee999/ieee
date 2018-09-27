@@ -19,6 +19,17 @@ function objectToParameters(obj){
 	return Object.keys(obj).map(function(key){ return key + "=" + obj[key]; }).join('&');
 }
 
+function lessTenAddZero(v) { return v < 10? ("0" + v) : v; };
+
+Date.prototype.yymmddHHmmss = function() {
+	var mm = this.getMonth() + 1, // getMonth() is zero-based
+        dd = this.getDate();
+    return [
+    	[ this.getFullYear(), lessTenAddZero(mm), lessTenAddZero(dd) ].join('-'),
+    	[ lessTenAddZero(this.getHours()), lessTenAddZero(this.getMinutes()), lessTenAddZero(this.getSeconds()) ].join(':')
+    ].join(" ");
+};
+
 const houseIeee = "00137A000003AC18";
 const ieeeList = ["00137A0000047DC4","00137A0000047DE8"];
 const dataKeys = ["voltage","temperature","humidity"];
@@ -35,6 +46,7 @@ const remoteUrl = "http://210.61.40.166:8081/zigBeeDevice/deviceController/getfi
 const responseRe = new RegExp("null\\((.*)\\)");
 
 new Promise(function(resolve, reject){
+	const fetchedDatetime = (new Date()).yymmddHHmmss();
 	axios.get(remoteUrl + objectToParameters(requestParameters))
 		.then(function(result){
 			const matches = result.data.match(responseRe);
@@ -48,7 +60,7 @@ new Promise(function(resolve, reject){
 					})
 					.map(function(item){
 						let insertData = {
-							_last_time: item.lasttime,
+							_last_time: fetchedDatetime,
 							_name: item.deviceName,
 							_houseieee: item.houseIeee,
 							_ieee: item.ieee
